@@ -123,13 +123,15 @@ async function refresh() {
   refreshing = true;
   try {
     const root = workspaceRoot();
-    const repo = await findRepo(terminalDir || startingDir());
+    const dir = terminalDir || startingDir();
+    const repo = await findRepo(dir);
+    const where = placeParts(dir, root);
     let message;
     if (!repo) {
-      message = { type: "hint", text: "The terminal isn't inside a Git repo. Use <code>cd</code> to go into one, for example <code>cd workspace/playground</code>." };
+      message = { type: "hint", where, text: "This folder isn't a Git repo, so there's no desk, box or shelf to show here. Use <code>cd</code> to walk around: the path above follows you. In Chapter 1 you'll get a repo of your own." };
     } else if (root && repo === root && fs.existsSync(path.join(root, "workspace"))) {
       // The demo's own repo: not something students should practice on.
-      message = { type: "hint", text: "This is the course folder, not a practice repo. Go into one: <code>cd workspace/playground</code>" };
+      message = { type: "hint", where, text: "This is the course folder. The map wakes up inside a practice repo: <code>cd workspace/playground</code> to practice, or <code>cd workspace/mission</code> once you've cloned it in Chapter 1." };
     } else {
       const state = await readState(repo);
       watchFolder(path.join(repo, ".git"));
@@ -148,6 +150,16 @@ async function refresh() {
     refreshing = false;
     if (refreshAgain) { refreshAgain = false; schedule(0); }
   }
+}
+
+// The terminal's folder as a list of names, starting from "course folder",
+// for the "You are here" path.
+function placeParts(dir, root) {
+  if (!dir) return [];
+  if (root && (dir === root || dir.startsWith(root + path.sep))) {
+    return ["course folder", ...path.relative(root, dir).split(path.sep).filter(Boolean)];
+  }
+  return dir.split(path.sep).filter(Boolean);
 }
 
 // Watch a folder (like .git) so the map updates right after a command.
@@ -208,7 +220,11 @@ function pageHtml(webview, extensionUri) {
   </header>
   <div id="command" class="command" hidden></div>
   <p id="caption" class="caption">Waiting for Git…</p>
-  <div id="hint" class="hint" hidden></div>
+  <div id="hint" class="hint" hidden>
+    <div class="here-label">You are here</div>
+    <div class="here" id="here"></div>
+    <p id="hintText"></p>
+  </div>
   <main id="main">
     <div id="ship" class="ship">
       <div class="group">

@@ -31,8 +31,17 @@
     const m = e.data;
     if (m.type === "hint") {
       $("#main").hidden = true;
+      $("#caption").hidden = true;
       $("#hint").hidden = false;
-      $("#hint").innerHTML = m.text;
+      const here = $("#here");
+      const html = (m.where || []).map((p) => `<span class="crumb">${esc(p)}</span>`).join('<span class="sep">›</span>');
+      if (here.innerHTML !== html) {
+        here.innerHTML = html;
+        here.classList.remove("flash");
+        void here.offsetWidth; // restart the highlight
+        here.classList.add("flash");
+      }
+      $("#hintText").innerHTML = m.text;
       $("#branch").hidden = true;
       $("#merging").hidden = true;
       $("#repoName").textContent = "Git Map";
@@ -45,6 +54,7 @@
 
   function update(s, command) {
     $("#hint").hidden = true;
+    $("#caption").hidden = false;
     $("#main").hidden = false;
     const sameRepo = prev && prev.repo === s.repo;
     const ev = sameRepo ? diff(prev, s) : null;

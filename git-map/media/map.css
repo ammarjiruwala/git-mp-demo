@@ -39,7 +39,15 @@ code { font-family: var(--vscode-editor-font-family); font-size: 0.95em; backgro
 @keyframes flash { from { color: var(--accent); } to { color: var(--muted); } }
 .caption { margin: 0 0 12px; padding: 8px 10px; border-left: 3px solid var(--accent); background: var(--card); border-radius: 0 6px 6px 0; min-height: 2.6em; }
 .warn-text { color: var(--deleted); font-weight: 600; }
-.hint { padding: 16px; border: 1px dashed var(--line); border-radius: 8px; }
+.hint { padding: 16px; border: 1px dashed var(--line); border-radius: 8px; display: flex; flex-direction: column; gap: 8px; }
+.hint p { margin: 0; color: var(--muted); }
+.here-label { font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); }
+.here { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; font-family: var(--vscode-editor-font-family); font-size: 13px; padding: 6px 8px; border-radius: 6px; }
+.here .crumb { padding: 2px 8px; border-radius: 4px; background: var(--card); }
+.here .crumb:last-child { background: var(--accent); color: #fff; font-weight: 600; }
+.here .sep { color: var(--muted); }
+.here.flash { animation: here-flash 1s ease-out; }
+@keyframes here-flash { from { background: var(--cardboard); } to { background: transparent; } }
 
 /* layout of the four zones */
 .ship { display: flex; flex-direction: column; gap: 6px; }

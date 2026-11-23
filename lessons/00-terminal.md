@@ -17,6 +17,8 @@ Git can feel like magic words. So we'll use a picture. Every change you make tak
 
 The **Git Map** panel on the right shows these four places **live**. Every time you run a Git command, watch it: you'll see files and boxes move. If you close it, click **Git Map** in the bottom bar.
 
+In this chapter you're not inside a Git project yet, so the map only shows **where you are**. Watch that path change as you move around with `cd`. The desk, box, shelf and warehouse appear in Chapter 1.
+
 Here we use a stand-in for GitHub that lives in this workspace, so you can practice freely. It works the same way.
 
 ## The terminal
