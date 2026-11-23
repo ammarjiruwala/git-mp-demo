@@ -1,0 +1,118 @@
+#!/usr/bin/env node
+// Checks your progress in each chapter. Run it from the course folder: ./check
+// It only reads your repos and answers.md. It never changes anything.
+// (In the full MP, PrairieLearn runs these same checks to grade you.)
+"use strict";
+const { execFileSync } = require("child_process");
+const fs = require("fs");
+const path = require("path");
+
+const ROOT = __dirname;
+const MISSION = path.join(ROOT, "workspace", "mission");
+const WAREHOUSE = path.join(ROOT, "workspace", "warehouse.git");
+const STORY_PEOPLE = ["Priya", "Tess"];
+
+// Run git; return its output, or null if it failed.
+function git(cwd, ...args) {
+  if (!fs.existsSync(cwd)) return null;
+  try { return execFileSync("git", args, { cwd, stdio: ["ignore", "pipe", "ignore"] }).toString(); }
+  catch { return null; }
+}
+
+function answer(chapter) {
+  let text = "";
+  try { text = fs.readFileSync(path.join(ROOT, "answers.md"), "utf8"); } catch { return ""; }
+  const m = text.match(new RegExp(`Chapter ${chapter}:[ \\t]*(\\S*)`, "i"));
+  return m ? m[1].toUpperCase() : "";
+}
+
+// Commits as {hash, author, subject}, newest first.
+function commits(cwd, ...args) {
+  const out = git(cwd, "log", "--format=%H%x1f%an%x1f%s", ...args);
+  return (out || "").split("\n").filter(Boolean).map((l) => {
+    const [hash, author, subject] = l.split("\x1f");
+    return { hash, author, subject };
+  });
+}
+const isStudent = (c) => !STORY_PEOPLE.includes(c.author);
+
+// Does this version of team.md list someone besides Priya and Tess?
+function listsSomeoneNew(text) {
+  return (text || "").split("\n").some((line) => /^\s*-\s*\S/.test(line) && !/Priya|Tess/.test(line));
+}
+
+const missionIsRepo = () => git(MISSION, "rev-parse", "--show-toplevel") !== null &&
+  path.resolve(git(MISSION, "rev-parse", "--show-toplevel").trim()) === path.resolve(MISSION);
+
+const chapters = [
+  {
+    title: "Terminal survival",
+    done: () => answer(0) === "BEACON",
+    hint: () => answer(0) ? `"${answer(0)}" isn't the right code for Chapter 0. Look again in workspace/hq.` : "Find Priya's note in workspace/hq (use cd, ls and cat), then write its code in answers.md and save.",
+  },
+  {
+    title: "Get the code",
+    done: () => {
+      if (!missionIsRepo()) return false;
+      const url = (git(MISSION, "config", "--get", "remote.origin.url") || "").trim();
+      return url && path.resolve(MISSION, url) === path.resolve(WAREHOUSE);
+    },
+    hint: () => fs.existsSync(MISSION)
+      ? "workspace/mission exists but wasn't cloned from the warehouse. Delete it (rm -rf workspace/mission) and clone again."
+      : "Go to the workspace folder (course, then cd workspace) and run: git clone warehouse.git mission",
+  },
+  {
+    title: "Look around",
+    done: () => answer(2) === "LANTERN",
+    hint: () => answer(2) ? `"${answer(2)}" isn't the right code for Chapter 2. Read every commit message in git log, not just the first lines.` : "In workspace/mission, run git log and read the messages. One has a code for you. Write it in answers.md.",
+  },
+  {
+    title: "Pack the box",
+    done: () => listsSomeoneNew(git(MISSION, "show", ":team.md")),
+    hint: () => "In workspace/mission, add a line with your name to team.md (like: - Sam (new teammate)), save it, then run: git add team.md",
+  },
+  {
+    title: "Seal it",
+    done: () => commits(MISSION, "--", "team.md").some(isStudent),
+    hint: () => "Commit your change to team.md: git commit -m \"Add myself to the team page\" (set your name with git config first if Git asks).",
+  },
+  {
+    title: "Ship it",
+    done: () => shipStatus() === "done",
+    hint: () => ({
+      "not-pushed": "Send your commit to the warehouse: git push",
+      "no-tess": "You pushed! Tess pushes a few seconds after your first push. Wait a moment, then run ./check again.",
+      "not-after-tess": "Now add a fun fact after your name in team.md, then add, commit and push. When the push is rejected, run git pull, then git push again.",
+    })[shipStatus()],
+  },
+];
+
+function shipStatus() {
+  const warehouseCommits = commits(WAREHOUSE, "main");
+  const yours = warehouseCommits.filter(isStudent);
+  if (!yours.length) return "not-pushed";
+  const tess = warehouseCommits.find((c) => c.author === "Tess" && c.subject === "Add meeting notes");
+  if (!tess) return "no-tess";
+  // Done when one of your commits on the warehouse came after Tess's (you pulled her work, then pushed).
+  const after = yours.some((c) => git(WAREHOUSE, "merge-base", "--is-ancestor", tess.hash, c.hash) !== null);
+  return after ? "done" : "not-after-tess";
+}
+
+// ---------- print the checklist ----------
+const green = (s) => `\x1b[32m${s}\x1b[0m`;
+const dim = (s) => `\x1b[2m${s}\x1b[0m`;
+const yellow = (s) => `\x1b[33m${s}\x1b[0m`;
+
+console.log("\nSnack Map: your progress\n");
+let shownHint = false;
+let count = 0;
+chapters.forEach((ch, i) => {
+  const ok = ch.done();
+  if (ok) count++;
+  console.log(`  ${ok ? green("✓") : dim("○")}  Chapter ${i}  ${ok ? ch.title : dim(ch.title)}`);
+  if (!ok && !shownHint) {
+    console.log(yellow(`        Next: ${ch.hint()}`));
+    shownHint = true;
+  }
+});
+console.log(`\n  ${count} of ${chapters.length} chapters done.${count === chapters.length ? green("  You shipped your first change. Welcome to the team!") : ""}\n`);

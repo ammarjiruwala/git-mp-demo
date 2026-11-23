@@ -28,3 +28,11 @@ case "$PROMPT_COMMAND" in
   *__gitmap_log*) ;;
   *) PROMPT_COMMAND="__gitmap_log${PROMPT_COMMAND:+;$PROMPT_COMMAND}" ;;
 esac
+
+# `course` jumps back to the course folder from anywhere.
+GITMAP_COURSE_ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
+course() { cd "$GITMAP_COURSE_ROOT" || return; }
+
+# Merges (like the one `git pull` makes) use Git's default message
+# instead of opening an editor and waiting.
+export GIT_MERGE_AUTOEDIT=no

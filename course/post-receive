@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+# Runs inside the team's warehouse after every push.
+# The first time the new teammate pushes, Tess pushes her own commit a few
+# seconds later, so the student's next push is rejected (Chapter 5).
+WAREHOUSE=$(cd "$(dirname "$0")/.." && pwd)
+[ -f "$WAREHOUSE/tess-pushed" ] && exit 0
+touch "$WAREHOUSE/tess-pushed"
+echo ""
+echo "Tess: Got your push, welcome to the team! I'm sending my meeting notes in a few seconds."
+echo ""
+nohup bash "__COURSE__/course/tess-push.sh" "$WAREHOUSE" 6 >/dev/null 2>&1 &
+exit 0

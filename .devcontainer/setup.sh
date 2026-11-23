@@ -13,9 +13,7 @@ grep -q "git-map-hook.sh" ~/.bashrc 2>/dev/null || echo "source \"$ROOT/.devcont
 git config --global pull.rebase false
 git config --global init.defaultBranch main
 git config --global core.editor "code --wait"
-# Codespaces normally sets your name from GitHub. If not, use a placeholder.
-git config --global user.name >/dev/null || git config --global user.name "Student"
-git config --global user.email >/dev/null || git config --global user.email "student@example.com"
+# (Your name and email are set by you in Chapter 4.)
 
 # 3. Build the practice repos.
-./start
+./start --yes

@@ -1,18 +1,6 @@
 #!/usr/bin/env bash
-# Pretends your teammate Tess pushed a commit to the warehouse.
-# (In the full MP this happens on its own after your first push.)
-set -e
+# Practice: pretend your teammate Tess pushed a commit to the PLAYGROUND's warehouse.
+# (In your mission repo, Tess pushes by herself after your first push.)
 cd "$(dirname "$0")"
-W="$(pwd)/workspace"
-TMP=$(mktemp -d)
-git clone -q "$W/warehouse.git" "$TMP/tess"
-cd "$TMP/tess"
-N=$(git rev-list --count HEAD)
-printf 'Meeting notes #%s\n- Demo on Friday\n' "$N" >> meeting-notes.md
-git add meeting-notes.md
-GIT_AUTHOR_NAME="Tess" GIT_AUTHOR_EMAIL="tess@example.com" \
-GIT_COMMITTER_NAME="Tess" GIT_COMMITTER_EMAIL="tess@example.com" \
-  git commit -q -m "Add meeting notes"
-git push -q origin HEAD
-rm -rf "$TMP"
-echo "Tess pushed a commit to the warehouse."
+bash course/tess-push.sh "$(pwd)/workspace/practice-warehouse.git" 0 \
+  && echo "Tess pushed a commit to the playground's warehouse. Watch the Git Map."

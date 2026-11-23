@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+# Puts the playground back to how it started. Your mission repo is not touched.
+set -e
+cd "$(dirname "$0")"
+ROOT=$(pwd)
+source "$ROOT/course/lib.sh"
+build_playground "$ROOT/workspace"
+echo "The playground is fresh again. Go back in with: cd workspace/playground"
