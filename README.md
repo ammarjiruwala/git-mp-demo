@@ -2,7 +2,7 @@
 
 Learn Git by joining a (fictional) student team building **Snack Map**, a campus app for late-night snacks. You work in a real Git setup in your browser, and a live **Git Map** shows exactly where your files and commits go after every command.
 
-*A proposed CS124H MP. Work in progress.*
+*A proposed CS124H MP.* **Course staff: [start here](COURSE-STAFF.md)** for what this is, why, and how to review it in 15 minutes.
 
 [![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/ammarjiruwala/git-mp-demo)
 
