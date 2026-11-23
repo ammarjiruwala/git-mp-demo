@@ -18,15 +18,32 @@ Whenever you're unsure what's going on, run `git status`. It also suggests what 
 | `git status` | What's changed on your desk, and what's in the box |
 | `git log` | Every commit: ID, author, date and message. Newest first. |
 | `git log --oneline` | The short version: one line per commit |
+| `git log -p` | Every commit *and* exactly what it changed (long!) |
 | `git restore <file>` | Throw away your changes to a file on the desk (careful: they're gone) |
 
-> **Stuck in `git log`?** If the list is long, Git shows it one screen at a time. Press **Space** for more, and **q** to quit.
+## Git's viewer: don't panic
+
+When Git has more to show than fits on the screen, it opens a **viewer**. You'll know you're in it because:
+- the prompt (`$`) disappears and you can't type commands
+- there's a `:` at the bottom of the screen, or `(END)` when you reach the end
+
+You're not stuck. You're reading, and these keys move you around:
+
+| Key | What it does |
+|---|---|
+| **Space** | Next page |
+| **b** | Back one page |
+| **↓** / **↑** | One line down / up |
+| **/word** then Enter | Search for "word" (press **n** for the next match) |
+| **q** | **Quit** the viewer and get your prompt back |
+
+The Git Map also shows a reminder whenever the viewer is open. You'll meet this viewer on every real project, so it's worth getting comfortable with it now.
 
 ## Try it
 
 In the playground (`course` then `cd workspace/playground`):
 
-1. `git status` — what does it say? *Guess first:* have you changed anything yet?
+1. `git status` — *guess first:* have you changed anything yet?
 2. Change a file:
    ```
    echo "hello" >> notes.txt
@@ -34,8 +51,9 @@ In the playground (`course` then `cd workspace/playground`):
    (`echo "hello" >> notes.txt` adds a line to the end of the file. You can also open the file from the list on the left, type, and save.)
    **Watch the map:** `notes.txt` appears on your **Desk**.
 3. `git status` again — `notes.txt` is listed in **red** under "Changes not staged". Red means "on your desk, not packed".
-4. `git log` and then `git log --oneline`. Which is easier to read?
-5. Throw your change away: `git restore notes.txt`. **Watch the map:** the card disappears from the desk.
+4. `git log --oneline` — short and simple.
+5. `git log -p` — this one is long, so the **viewer** opens. Press **Space** a few times, then **b**, then search with `/Priya`, then **q** to quit.
+6. Throw your change away: `git restore notes.txt`. **Watch the map:** the card disappears from the desk.
 
 ## Mission
 
@@ -47,15 +65,10 @@ cd workspace/mission
 git log
 ```
 
-Read every message carefully, not just the first line of each. One of them has your Chapter 2 code. Write it in **answers.txt** and save. Then:
-
-```
-course
-./check
-```
+Read every message carefully, not just the first line of each. One of them has your Chapter 2 code. Write it in **answers.txt**, save, and run `check`.
 
 ## Remember
 
-`git status` and `git log` only look. Run them as often as you like. Red in `git status` means "changed on your desk, not packed yet".
+`git status` and `git log` only look, so run them as often as you like. If the screen fills up and you can't type, you're in the viewer: **q** gets you out.
 
-**Next:** [Chapter 3: Pack the box](03-pack-the-box.md)
+**Next:** [Chapter 3: Pack the box](03-pack-the-box.md) · [All chapters](contents.md)

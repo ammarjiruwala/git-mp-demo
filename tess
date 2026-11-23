@@ -2,5 +2,5 @@
 # Practice: pretend your teammate Tess pushed a commit to the PLAYGROUND's warehouse.
 # (In your mission repo, Tess pushes by herself after your first push.)
 cd "$(dirname "$0")"
-bash course/tess-push.sh "$(pwd)/workspace/practice-warehouse.git" 0 \
+bash .course-files/tess-push.sh "$(pwd)/workspace/practice-warehouse.git" 0 \
   && echo "Tess pushed a commit to the playground's warehouse. Watch the Git Map."

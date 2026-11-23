@@ -9,6 +9,7 @@
   const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   let view = (vscode.getState() || {}).view || "ship";
   let prev = null;
+  let revealedFor = null; // the folder where `ls` was last run
 
   const esc = (s) => String(s == null ? "" : s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
   const plural = (n, one, many) => `${n} ${n === 1 ? one : many}`;
@@ -43,18 +44,25 @@
       }
       $("#hintText").innerHTML = m.text;
 
-      // What's in this folder, like `ls` shows.
+      // What's in this folder stays hidden until the student runs `ls` there.
+      // Moving to another folder hides it again, so `ls` has a job to do.
       const list = $("#listing");
-      list.innerHTML = (m.listing || []).length
-        ? m.listing.map((e) => `<li class="${e.folder ? "folder" : "file"}"><span class="icon" aria-hidden="true"></span>${esc(e.name)}${e.folder ? "/" : ""}</li>`).join("")
-        : `<li class="empty">Nothing here.</li>`;
+      const placeKey = (m.where || []).join("/");
+      if (/^ls\b/.test((m.command || "").trim())) revealedFor = placeKey;
+      if (revealedFor === placeKey) {
+        list.innerHTML = (m.listing || []).length
+          ? m.listing.map((e) => `<li class="${e.folder ? "folder" : "file"}"><span class="icon" aria-hidden="true"></span>${esc(e.name)}${e.folder ? "/" : ""}</li>`).join("")
+          : `<li class="empty">This folder is empty.</li>`;
+      } else {
+        list.innerHTML = `<li class="empty">Run <code>ls</code> to see what's in this folder.</li>`;
+      }
 
       // A one-line explanation of the terminal command that was just run.
       const note = $("#hintNote");
       const cmd = (m.command || "").trim();
       const word = cmd.split(/\s+/)[0];
       const notes = {
-        ls: "<code>ls</code> lists what's in the folder you're in. It's shown below too.",
+        ls: "<code>ls</code> listed what's in the folder you're in. It's shown below too.",
         pwd: "<code>pwd</code> prints where you are: the same path as above.",
         cd: /^cd\s+\.\.\s*$/.test(cmd) ? "<code>cd ..</code> moved you up one folder." : "<code>cd</code> moved you into another folder. The path above follows you.",
         cat: "<code>cat</code> printed what's inside that file. Read it in the terminal.",
@@ -74,6 +82,7 @@
       prev = null;
     }
     if (m.type === "state") update(m.state, m.command);
+    if (m.type === "viewer") $("#viewer").hidden = !m.open;
   });
   vscode.postMessage({ type: "ready" });
 
@@ -233,56 +242,71 @@
   }
 
   // ---------- drawing the tree view ----------
+  // A "subway map": oldest commit on the left, newest on the right.
+  // Each lane is a track; the branch you're on is always the bottom track.
+  // Branch names are flags above the newest commit of each branch.
   function renderTree(s) {
-    const rows = s.graph;
+    const rows = s.graph.slice().reverse(); // oldest first
     if (!rows.length) { $("#tree").innerHTML = `<p class="empty">No commits yet.</p>`; return; }
-    const H = 30, LW = 18, TOP = H / 2;
+    const COL = 100, ROW = 64, LEFT = 50;
+
+    const refsAt = new Map();
+    for (const r of s.refs) { if (!refsAt.has(r.hash)) refsAt.set(r.hash, []); refsAt.get(r.hash).push(r); }
+    const flags = (c) => {
+      const out = [];
+      if (!s.branch && c.hash === s.head) out.push(`<span class="ref head">HEAD · you are here</span>`);
+      for (const r of refsAt.get(c.hash) || []) {
+        if (r.kind === "branch" && r.name === s.branch) out.push(`<span class="ref head">${esc(r.name)} · you are here</span>`);
+        else if (r.kind === "branch") out.push(`<span class="ref branch">${esc(r.name)}</span>`);
+        else if (r.kind === "remote") out.push(`<span class="ref remote">☁ ${esc(r.name)}</span>`);
+        else out.push(`<span class="ref tag">${esc(r.name)}</span>`);
+      }
+      return out;
+    };
+    const maxFlags = Math.max(1, ...rows.map((c) => flags(c).length));
     const maxLane = Math.max(...rows.map((c) => c.lane));
-    const gx = (l) => 12 + l * LW;
-    const gy = (i) => TOP + i * H;
-    const width = gx(maxLane) + 14;
+    // Lane 0 at the bottom, side branches stacked above it.
+    const TOP = 20 + maxFlags * 22;
+    const x = (i) => LEFT + i * COL;
+    const y = (lane) => TOP + (maxLane - lane) * ROW;
+    const width = x(rows.length - 1) + COL;
+    const height = y(0) + 52;
     const index = new Map(rows.map((c, i) => [c.hash, i]));
 
     let paths = "";
     rows.forEach((c, i) => {
       c.parents.forEach((p, k) => {
-        const x1 = gx(c.lane), y1 = gy(i);
+        const xc = x(i), yc = y(c.lane);
         const j = index.get(p);
-        if (j === undefined) { paths += `<path d="M${x1} ${y1} L${x1} ${y1 + H * 0.7}" style="stroke:${laneColor(c.lane)}" class="edge faded"/>`; return; }
+        if (j === undefined) { paths += `<path d="M${xc - 40} ${yc} L${xc} ${yc}" style="stroke:${laneColor(c.lane)}" class="edge faded"/>`; return; }
         const pc = rows[j];
-        const x2 = gx(pc.lane), y2 = gy(j);
+        const xp = x(j), yp = y(pc.lane);
         let d;
-        if (x1 === x2) d = `M${x1} ${y1} L${x2} ${y2}`;
-        else if (k === 0) d = `M${x1} ${y1} L${x1} ${y2 - H} C${x1} ${y2 - H * 0.3} ${x2} ${y2 - H * 0.7} ${x2} ${y2}`;
-        else d = `M${x1} ${y1} C${x1} ${y1 + H * 0.7} ${x2} ${y1 + H * 0.3} ${x2} ${y1 + H} L${x2} ${y2}`;
+        if (yp === yc) d = `M${xp} ${yp} L${xc} ${yc}`;
+        else if (k === 0) d = `M${xp} ${yp} C${xp + 40} ${yp} ${xp + 40} ${yc} ${xp + 80} ${yc} L${xc} ${yc}`; // a branch splits off
+        else d = `M${xp} ${yp} L${xc - 80} ${yp} C${xc - 40} ${yp} ${xc - 40} ${yc} ${xc} ${yc}`;          // a branch joins back in
         paths += `<path d="${d}" style="stroke:${laneColor(k === 0 ? c.lane : pc.lane)}" class="edge"/>`;
       });
     });
-    let dots = "";
+
+    let dots = "", html = "";
     rows.forEach((c, i) => {
       const hollow = s.warehouse.connected && !c.onWarehouse;
-      dots += `<circle cx="${gx(c.lane)}" cy="${gy(i)}" r="6" style="stroke:${laneColor(c.lane)};fill:${hollow ? "var(--vscode-editor-background)" : laneColor(c.lane)}" ${hollow ? 'stroke-dasharray="3 2"' : ""} class="dot"><title>${esc(c.msg)}</title></circle>`;
+      const col = laneColor(c.lane);
+      const isHead = c.hash === s.head;
+      dots += `<circle cx="${x(i)}" cy="${y(c.lane)}" r="${isHead ? 10 : 8}" style="stroke:${col};fill:${hollow ? "var(--vscode-editor-background)" : col}" ${hollow ? 'stroke-dasharray="3 2"' : ""} class="dot"><title>${esc(c.msg)} (${esc(c.short)}, ${esc(c.author)})</title></circle>`;
+      const f = flags(c);
+      if (f.length) html += `<div class="tflags" style="left:${x(i) - 8}px;bottom:${height - y(c.lane) + 14}px">${f.join("")}</div>`;
+      html += `<div class="tinfo" style="left:${x(i) - COL / 2 + 4}px;top:${y(c.lane) + 13}px;width:${COL - 8}px" title="${esc(c.msg)}"><span class="h">${esc(c.short)}</span><span class="m">${esc(c.msg)}</span></div>`;
     });
 
-    const refsAt = new Map();
-    for (const r of s.refs) { if (!refsAt.has(r.hash)) refsAt.set(r.hash, []); refsAt.get(r.hash).push(r); }
-
-    const text = rows.map((c, i) => {
-      const refs = (refsAt.get(c.hash) || []).map((r) => {
-        const isHead = r.kind === "branch" && r.name === s.branch;
-        const cls = isHead ? "ref head" : "ref " + r.kind;
-        return `<span class="${cls}">${isHead ? "HEAD → " : ""}${esc(r.name)}</span>`;
-      });
-      if (!s.branch && c.hash === s.head) refs.unshift(`<span class="ref head">HEAD</span>`);
-      return `<div class="trow" style="top:${gy(i) - H / 2}px;height:${H}px;padding-left:${width + 6}px">${refs.join("")}<span class="tmsg">${esc(c.msg)}</span><span class="tmeta">${esc(c.author)} · ${esc(c.short)}</span></div>`;
-    }).join("");
-
     $("#tree").innerHTML = `
-      <p class="legend"><span><i class="ldot"></i>on the warehouse</span><span><i class="ldot hollow"></i>only on your laptop</span><span>newest at the top</span></p>
-      <div class="tgraph" style="height:${gy(rows.length - 1) + H / 2 + 4}px">
-        <svg width="${width}" height="${gy(rows.length - 1) + H / 2 + 4}" aria-hidden="true">${paths}${dots}</svg>
-        ${text}
-      </div>`;
+      <p class="legend"><span>Oldest on the left → newest on the right</span><span>Each colored track is a branch</span><span><i class="ldot"></i>on the warehouse</span><span><i class="ldot hollow"></i>only on your laptop</span></p>
+      <div class="tscroll" id="tscroll"><div class="tcanvas" style="width:${width}px;height:${height}px">
+        <svg width="${width}" height="${height}" aria-hidden="true">${paths}${dots}</svg>${html}
+      </div></div>`;
+    const sc = $("#tscroll");
+    sc.scrollLeft = sc.scrollWidth;
   }
 
   // ---------- animation ----------

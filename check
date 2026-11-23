@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Checks your progress in each chapter. Run it from the course folder: ./check
+// Checks your progress in every chapter. Run it from anywhere by typing: check
 // It only reads your repos and answers.txt. It never changes anything.
 // (In the full MP, PrairieLearn runs these same checks to grade you.)
 "use strict";
@@ -8,9 +8,15 @@ const fs = require("fs");
 const path = require("path");
 
 const ROOT = __dirname;
-const MISSION = path.join(ROOT, "workspace", "mission");
-const WAREHOUSE = path.join(ROOT, "workspace", "warehouse.git");
-const STORY_PEOPLE = ["Priya", "Tess"];
+const W = path.join(ROOT, "workspace");
+const MISSION = path.join(W, "mission");
+const WAREHOUSE = path.join(W, "warehouse.git");
+const RESCUE = path.join(W, "rescue");
+const DETECTIVE = path.join(W, "detective");
+const STORY_PEOPLE = ["Priya", "Tess", "AI Agent", "Jordan", "Alex"];
+const STORY_BRANCHES = ["main", "backstage", "new-tagline", "agent/add-hours"];
+
+// ---------- helpers ----------
 
 // Run git; return its output, or null if it failed.
 function git(cwd, ...args) {
@@ -18,101 +24,201 @@ function git(cwd, ...args) {
   try { return execFileSync("git", args, { cwd, stdio: ["ignore", "pipe", "ignore"] }).toString(); }
   catch { return null; }
 }
+const ok = (cwd, ...args) => git(cwd, ...args) !== null;
+const lines = (s) => (s || "").split("\n").filter(Boolean);
 
-function answer(chapter) {
-  let text = "";
-  try { text = fs.readFileSync(path.join(ROOT, "answers.txt"), "utf8"); } catch { return ""; }
-  const m = text.match(new RegExp(`Chapter ${chapter}:[ \\t]*(\\S*)`, "i"));
-  return m ? m[1].toUpperCase() : "";
+let answersText = "";
+try { answersText = fs.readFileSync(path.join(ROOT, "answers.txt"), "utf8"); } catch { /* not there yet */ }
+function answer(label) {
+  const m = answersText.match(new RegExp(`^${label}:[ \\t]*(.*)$`, "im"));
+  return m ? m[1].trim() : "";
 }
 
-// Commits as {hash, author, subject}, newest first.
+// Commits as {hash, author, subject, parents}, newest first.
 function commits(cwd, ...args) {
-  const out = git(cwd, "log", "--format=%H%x1f%an%x1f%s", ...args);
-  return (out || "").split("\n").filter(Boolean).map((l) => {
-    const [hash, author, subject] = l.split("\x1f");
-    return { hash, author, subject };
+  return lines(git(cwd, "log", "--format=%H%x1f%an%x1f%s%x1f%P", ...args)).map((l) => {
+    const [hash, author, subject, parents] = l.split("\x1f");
+    return { hash, author, subject, parents: parents ? parents.split(" ") : [] };
   });
 }
-const isStudent = (c) => !STORY_PEOPLE.includes(c.author);
+const byStudent = (c) => !STORY_PEOPLE.includes(c.author);
+const fileAt = (cwd, rev, file) => git(cwd, "show", `${rev}:${file}`);
+const hasMarkers = (text) => /^(<<<<<<<|=======|>>>>>>>)/m.test(text || "");
+const isRepoRoot = (dir) => { const t = git(dir, "rev-parse", "--show-toplevel"); return t !== null && path.resolve(t.trim()) === path.resolve(dir); };
+const warehouseHead = (name) => (git(WAREHOUSE, "rev-parse", "-q", "--verify", "refs/heads/" + name) || "").trim();
 
-// Does this version of team.md list someone besides Priya and Tess?
-function listsSomeoneNew(text) {
-  return (text || "").split("\n").some((line) => /^\s*-\s*\S/.test(line) && !/Priya|Tess/.test(line));
+// Student-made branches in the mission repo whose newest commit is theirs.
+function studentBranches() {
+  return lines(git(MISSION, "for-each-ref", "--format=%(refname:short)", "refs/heads"))
+    .filter((b) => !STORY_BRANCHES.includes(b))
+    .filter((b) => { const c = commits(MISSION, "-1", b)[0]; return c && byStudent(c); });
 }
 
-const missionIsRepo = () => git(MISSION, "rev-parse", "--show-toplevel") !== null &&
-  path.resolve(git(MISSION, "rev-parse", "--show-toplevel").trim()) === path.resolve(MISSION);
+// ---------- Part 1 ----------
+function shipStatus() {
+  const wh = commits(WAREHOUSE, "main");
+  const yours = wh.filter(byStudent);
+  if (!yours.length) return "not-pushed";
+  const tess = wh.find((c) => c.author === "Tess" && c.subject === "Add meeting notes");
+  if (!tess) return "no-tess";
+  return yours.some((c) => ok(WAREHOUSE, "merge-base", "--is-ancestor", tess.hash, c.hash)) ? "done" : "not-after-tess";
+}
 
-const chapters = [
-  {
-    title: "Terminal survival",
-    done: () => answer(0) === "BEACON",
-    hint: () => answer(0) ? `"${answer(0)}" isn't the right code for Chapter 0. Look again in workspace/hq.` : "Find Priya's note in workspace/hq (use cd, ls and cat), then write its code in answers.txt and save.",
-  },
-  {
-    title: "Get the code",
-    done: () => {
-      if (!missionIsRepo()) return false;
-      const url = (git(MISSION, "config", "--get", "remote.origin.url") || "").trim();
-      return url && path.resolve(MISSION, url) === path.resolve(WAREHOUSE);
-    },
-    hint: () => fs.existsSync(MISSION)
-      ? "workspace/mission exists but wasn't cloned from the warehouse. Delete it (rm -rf workspace/mission) and clone again."
-      : "Go to the workspace folder (course, then cd workspace) and run: git clone warehouse.git mission",
-  },
-  {
-    title: "Look around",
-    done: () => answer(2) === "LANTERN",
-    hint: () => answer(2) ? `"${answer(2)}" isn't the right code for Chapter 2. Read every commit message in git log, not just the first lines.` : "In workspace/mission, run git log and read the messages. One has a code for you. Write it in answers.txt.",
-  },
-  {
-    title: "Pack the box",
-    done: () => listsSomeoneNew(git(MISSION, "show", ":team.md")),
-    hint: () => "In workspace/mission, add a line with your name to team.md (like: - Sam (new teammate)), save it, then run: git add team.md",
-  },
-  {
-    title: "Seal it",
-    done: () => commits(MISSION, "--", "team.md").some(isStudent),
-    hint: () => "Commit your change to team.md: git commit -m \"Add myself to the team page\" (set your name with git config first if Git asks).",
-  },
-  {
-    title: "Ship it",
+const PART1 = [
+  { id: "Chapter 0", title: "Welcome to the team",
+    done: () => answer("Chapter 0").toUpperCase() === "BEACON",
+    hint: () => "Find Priya's note in workspace/hq (use cd, ls and cat), then write its code in answers.txt and save." },
+  { id: "Chapter 1", title: "Get the code",
+    done: () => isRepoRoot(MISSION) && path.resolve(MISSION, (git(MISSION, "config", "--get", "remote.origin.url") || "x").trim()) === path.resolve(WAREHOUSE),
+    hint: () => fs.existsSync(MISSION) ? "workspace/mission wasn't cloned from the warehouse. Remove it (rm -rf workspace/mission) and clone again." : "Go to the workspace folder (course, then cd workspace) and run: git clone warehouse.git mission" },
+  { id: "Chapter 2", title: "Look around",
+    done: () => answer("Chapter 2").toUpperCase() === "LANTERN",
+    hint: () => "In workspace/mission, run git log and read every commit message. One has a code for you. Write it in answers.txt." },
+  { id: "Chapter 3", title: "Pack the box",
+    done: () => /^\s*-\s*\S/m.test((fileAt(MISSION, "", "team.md") || "").split("\n").filter((l) => !/Priya|Tess/.test(l)).join("\n")),
+    hint: () => "In workspace/mission, add a line with your name to team.md (like: - Sam (new teammate)), save it, then: git add team.md" },
+  { id: "Chapter 4", title: "Seal it",
+    done: () => commits(MISSION, "--", "team.md").some(byStudent),
+    hint: () => "Commit your change: git commit -m \"Add myself to the team page\" (set your name with git config first if Git asks)." },
+  { id: "Chapter 5", title: "Ship it",
     done: () => shipStatus() === "done",
     hint: () => ({
       "not-pushed": "Send your commit to the warehouse: git push",
-      "no-tess": "You pushed! Tess pushes a few seconds after your first push. Wait a moment, then run ./check again.",
-      "not-after-tess": "Now add a fun fact after your name in team.md, then add, commit and push. When the push is rejected, run git pull, then git push again.",
-    })[shipStatus()],
-  },
+      "no-tess": "You pushed! Tess pushes a few seconds after your first push. Wait a moment, then run check again.",
+      "not-after-tess": "Add a fun fact after your name in team.md, then add, commit and push. When the push is rejected: git pull, then git push.",
+    })[shipStatus()] },
+  { id: "Chapter 6", title: "Branches",
+    done: () => answer("Chapter 6").toUpperCase() === "TORCH" && studentBranches().length > 0,
+    hint: () => answer("Chapter 6").toUpperCase() !== "TORCH"
+      ? "Switch to the backstage branch (git switch backstage), read secret-menu.md, and write the code in answers.txt."
+      : "Now make your own branch and commit on it: git switch -c my-idea, change a file, add, commit." },
+  { id: "Chapter 7", title: "Merge",
+    done: () => {
+      const main = (git(WAREHOUSE, "rev-parse", "main") || "").trim();
+      return studentBranches().some((b) => { const tip = (git(MISSION, "rev-parse", b) || "").trim(); return tip && ok(WAREHOUSE, "merge-base", "--is-ancestor", tip, main); });
+    },
+    hint: () => "Merge your branch into main and ship it: git switch main, git merge my-idea, git push" },
+  { id: "Chapter 8", title: "Merge conflicts",
+    done: () => {
+      const tip = warehouseHead("new-tagline");
+      const merged = commits(WAREHOUSE, "main").some((c) => c.parents.length > 1 && c.parents.includes(tip));
+      return merged && !hasMarkers(fileAt(WAREHOUSE, "main", "index.html"));
+    },
+    hint: () => fs.existsSync(path.join(MISSION, ".git", "MERGE_HEAD"))
+      ? "You're in the middle of the merge. Fix index.html (remove the <<<<<<<, ======= and >>>>>>> lines), then git add index.html, git commit, git push."
+      : "Merge Priya's branch into main: git switch new-tagline, git switch main, git merge new-tagline. Fix the conflict, then add, commit, push." },
+  { id: "Chapter 9", title: "Pull requests",
+    done: () => {
+      const pr = commits(WAREHOUSE, "main").find((c) => c.subject.startsWith("Merge pull request"));
+      return Boolean(pr) && ok(MISSION, "merge-base", "--is-ancestor", pr.hash, "main");
+    },
+    hint: () => commits(WAREHOUSE, "main").some((c) => c.subject.startsWith("Merge pull request"))
+      ? "Priya merged your pull request in the warehouse. Bring it down: git switch main, then git pull"
+      : "Fix the typo on a branch: git switch -c fix-typo, change \"nite\" to \"night\" in README.md, commit, git push -u origin fix-typo, then: request-review fix-typo" },
+  { id: "Chapter 10", title: "Check the agent's work",
+    done: () => /^style\.css$/i.test(answer("Chapter 10")),
+    hint: () => answer("Chapter 10")
+      ? `"${answer("Chapter 10")}" isn't it. The agent was asked to add opening hours. Which other file did it change? Try: git diff --stat main...origin/agent/add-hours`
+      : "Look at the agent's branch (git log origin/agent/add-hours, git show origin/agent/add-hours) and write the file it changed without being asked in answers.txt." },
 ];
 
-function shipStatus() {
-  const warehouseCommits = commits(WAREHOUSE, "main");
-  const yours = warehouseCommits.filter(isStudent);
-  if (!yours.length) return "not-pushed";
-  const tess = warehouseCommits.find((c) => c.author === "Tess" && c.subject === "Add meeting notes");
-  if (!tess) return "no-tess";
-  // Done when one of your commits on the warehouse came after Tess's (you pulled her work, then pushed).
-  const after = yours.some((c) => git(WAREHOUSE, "merge-base", "--is-ancestor", tess.hash, c.hash) !== null);
-  return after ? "done" : "not-after-tess";
+// ---------- Part 2 ----------
+const rescue = (n) => path.join(RESCUE, n);
+const PART2 = [
+  { id: "Rescue 1", title: "The unfinished merge",
+    done: () => {
+      const r = rescue("1-unfinished-merge");
+      const head = commits(r, "-1")[0];
+      const menu = fileAt(r, "HEAD", "menu.md") || "";
+      return !fs.existsSync(path.join(r, ".git", "MERGE_HEAD")) && head && head.parents.length === 2 && !hasMarkers(menu) && /Cookies/.test(menu) && /Pretzels/.test(menu);
+    },
+    hint: () => "In workspace/rescue/1-unfinished-merge: fix menu.md so it lists both Cookies and Pretzels (no conflict markers), then git add menu.md and git commit." },
+  { id: "Rescue 2", title: "Stuck on a branch",
+    done: () => {
+      const r = rescue("2-stuck-switch");
+      const visited = /moving from main to hotfix/.test(git(r, "reflog") || "");
+      let current = "";
+      try { current = fs.readFileSync(path.join(r, "index.html"), "utf8"); } catch { /* missing */ }
+      const branch = (git(r, "branch", "--show-current") || "").trim();
+      return visited && branch === "main" && /nachos/.test(current);
+    },
+    hint: () => "In workspace/rescue/2-stuck-switch: git stash, git switch hotfix, look around, git switch main, git stash pop. The nachos draft should be back in index.html." },
+  { id: "Rescue 3", title: "Detached HEAD",
+    done: () => {
+      const r = rescue("3-detached-head");
+      const onBranch = (git(r, "branch", "--show-current") || "").trim() !== "";
+      const dark = commits(r, "--all").find((c) => c.subject === "Try a dark theme");
+      const saved = dark && lines(git(r, "branch", "--contains", dark.hash)).length > 0;
+      return onBranch && Boolean(saved);
+    },
+    hint: () => "In workspace/rescue/3-detached-head: save Tess's commit on a branch with git switch -c dark-theme, then git switch main." },
+  { id: "Rescue 4", title: "Undo a shared commit",
+    done: () => {
+      const wh = path.join(RESCUE, "warehouses", "4-bad-commit.git");
+      return fileAt(wh, "main", "index.html") !== null && commits(wh, "main").some((c) => c.subject.startsWith("Revert"));
+    },
+    hint: () => "In workspace/rescue/4-bad-commit: git revert --no-edit HEAD, then git push." },
+  { id: "Rescue 5", title: "The leaked password",
+    done: () => {
+      const r = rescue("5-leaked-password");
+      const wh = path.join(RESCUE, "warehouses", "5-leaked-password.git");
+      const ignored = /settings\.env/.test(fileAt(wh, "main", ".gitignore") || "");
+      return fileAt(wh, "main", "settings.env") === null && ignored && /^yes$/i.test(answer("Rescue 5")) && fs.existsSync(r);
+    },
+    hint: () => "In workspace/rescue/5-leaked-password: git rm --cached settings.env, add settings.env to .gitignore, commit, push. Then answer the question in answers.txt." },
+];
+
+// ---------- Part 3 ----------
+// The commit that broke the title: the first one (oldest first) where index.html lost "<h1>Snack Map</h1>".
+function culprit() {
+  const all = commits(DETECTIVE, "--reverse", "--first-parent", "main");
+  for (const c of all) {
+    const html = fileAt(DETECTIVE, c.hash, "index.html") || "";
+    if (!html.includes("<h1>Snack Map</h1>")) return c;
+  }
+  return null;
 }
+const PART3 = [
+  { id: "Case 1", title: "The suspects",
+    done: () => answer("Case 1") === "4",
+    hint: () => "In workspace/detective: how many commits did Jordan make? Try git log --oneline --author=Jordan. Write the number in answers.txt." },
+  { id: "Case 2", title: "The evidence",
+    done: () => /^style\.css$/i.test(answer("Case 2")),
+    hint: () => "Which file did the \"Quick fix, don't look\" commit change? Find it with git log --oneline, then git show <its id>." },
+  { id: "Case 3", title: "Who touched the line?",
+    done: () => /^jordan$/i.test(answer("Case 3")),
+    hint: () => "Run git blame index.html. Who last changed the broken <h1> line? Write their name in answers.txt." },
+  { id: "Case 4", title: "Catch it and fix it",
+    done: () => {
+      const bad = culprit();
+      const a = answer("Case 4").toLowerCase();
+      const named = bad && a.length >= 7 && bad.hash.startsWith(a);
+      const fixed = (fileAt(DETECTIVE, "main", "index.html") || "").includes("<h1>Snack Map</h1>");
+      const reverted = commits(DETECTIVE, "main").some((c) => c.subject.startsWith("Revert"));
+      return named && fixed && reverted;
+    },
+    hint: () => "Find the exact commit that broke the title (go back in time and run bash test.sh), write its 7-character ID in answers.txt, then undo it with git revert --no-edit <id>." },
+];
 
 // ---------- print the checklist ----------
 const green = (s) => `\x1b[32m${s}\x1b[0m`;
 const dim = (s) => `\x1b[2m${s}\x1b[0m`;
 const yellow = (s) => `\x1b[33m${s}\x1b[0m`;
+const bold = (s) => `\x1b[1m${s}\x1b[0m`;
 
-console.log("\nSnack Map: your progress\n");
-let shownHint = false;
-let count = 0;
-chapters.forEach((ch, i) => {
-  const ok = ch.done();
-  if (ok) count++;
-  console.log(`  ${ok ? green("✓") : dim("○")}  Chapter ${i}  ${ok ? ch.title : dim(ch.title)}`);
-  if (!ok && !shownHint) {
-    console.log(yellow(`        Next: ${ch.hint()}`));
-    shownHint = true;
+const parts = [["Part 1: First week on the team", PART1], ["Part 2: Rescue mission", PART2], ["Part 3: Who broke main?", PART3]];
+let total = 0, done = 0, hinted = false;
+console.log("\nSnack Map: your progress");
+for (const [name, list] of parts) {
+  console.log("\n" + bold(name));
+  for (const ch of list) {
+    total++;
+    let isDone = false;
+    try { isDone = ch.done(); } catch { isDone = false; }
+    if (isDone) done++;
+    console.log(`  ${isDone ? green("✓") : dim("○")}  ${ch.id.padEnd(10)} ${isDone ? ch.title : dim(ch.title)}`);
+    if (!isDone && !hinted) { console.log(yellow(`        Next: ${ch.hint()}`)); hinted = true; }
   }
-});
-console.log(`\n  ${count} of ${chapters.length} chapters done.${count === chapters.length ? green("  You shipped your first change. Welcome to the team!") : ""}\n`);
+}
+const allPart1 = PART1.every((c) => { try { return c.done(); } catch { return false; } });
+console.log(`\n  ${done} of ${total} done.` + (done === total ? green("  Every case closed. You're ready for your group project!") : allPart1 && done === PART1.length ? green("  Part 1 complete. Welcome to the team!") : "") + "\n");

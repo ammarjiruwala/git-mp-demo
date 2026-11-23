@@ -88,25 +88,32 @@ function parseRefs(text) {
   return refs;
 }
 
-// Gives each commit a lane (column) for the tree view, like `git log --graph`.
-// `commits` must be newest first, in topological order.
-function layoutLanes(commits) {
-  const lanes = []; // lanes[i] = the commit we expect next in column i
+// Gives each commit a lane (a row in the tree view), like `git log --graph`.
+// `commits` must be newest first, in topological order. `mainline` is the set of
+// commits on the current branch's main line (first parents from HEAD): they all
+// go in lane 0, so the branch you're on is always the bottom track.
+function layoutLanes(commits, mainline = new Set()) {
+  const first = mainline.size ? 1 : 0; // lane 0 is kept for the main line
+  const lanes = mainline.size ? [null] : [];
+  const freeLane = () => {
+    for (let i = first; i < lanes.length; i++) if (lanes[i] === null) return i;
+    lanes.push(null);
+    return lanes.length - 1;
+  };
   return commits.map((c) => {
-    let lane = lanes.indexOf(c.hash);
-    if (lane === -1) {
-      lane = lanes.indexOf(null);
-      if (lane === -1) { lane = lanes.length; lanes.push(null); }
+    let lane = -1;
+    if (mainline.has(c.hash)) lane = 0;
+    else {
+      for (let i = first; i < lanes.length; i++) if (lanes[i] === c.hash) { lane = i; break; }
+      if (lane === -1) lane = freeLane();
     }
-    // Other columns waiting for this same commit end here (branches joining).
+    // Other lanes waiting for this same commit end here (branches joining).
     for (let i = 0; i < lanes.length; i++) if (i !== lane && lanes[i] === c.hash) lanes[i] = null;
     lanes[lane] = c.parents[0] || null;
-    // Extra parents (merges) continue in their own column.
+    // Extra parents (merges) continue in their own lane.
     for (const p of c.parents.slice(1)) {
-      if (lanes.includes(p)) continue;
-      let free = lanes.indexOf(null);
-      if (free === -1) { free = lanes.length; lanes.push(null); }
-      lanes[free] = p;
+      if (lanes.includes(p) || mainline.has(p)) continue;
+      lanes[freeLane()] = p;
     }
     return { ...c, lane };
   });
@@ -189,6 +196,7 @@ async function readState(repo) {
     ? parseLog(await git(repo, ["log", "-n", "6", FORMAT, "HEAD"])).map((c) => ({ ...c, pushed: onWarehouse(c.hash) }))
     : [];
   const headHistory = head ? lines(await git(repo, ["rev-list", "HEAD"])) : [];
+  const mainline = new Set(head ? lines(await git(repo, ["rev-list", "--first-parent", "HEAD"])) : []);
 
   return {
     repo,
@@ -209,7 +217,7 @@ async function readState(repo) {
       branch: wh.branch,
       commits: wh.commits.map((c) => ({ ...c, local: localAll.has(c.hash) })),
     },
-    graph: layoutLanes(parseLog(logOut)).map((c) => ({ ...c, onWarehouse: onWarehouse(c.hash) })),
+    graph: layoutLanes(parseLog(logOut), mainline).map((c) => ({ ...c, onWarehouse: onWarehouse(c.hash) })),
     refs: parseRefs(refsOut),
   };
 }

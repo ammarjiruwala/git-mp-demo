@@ -8,7 +8,7 @@ When you edit a file, the change is only on your **desk**. Git hasn't saved anyt
 
 To save a change in Git, you first **pack it into the box** (the **staging area**) with `git add`. The box holds exactly what will go into your next save. Nothing is in the history yet, and you can still take things back out.
 
-Why have a box at all? Because you often change several things but only want to save some of them together. The box lets you choose.
+Why have a box at all? You often change several things but only want to save some of them together. The box lets you choose.
 
 ## The commands
 
@@ -34,7 +34,7 @@ In the playground (`course` then `cd workspace/playground`). Guess first, then w
 3. `git status` — `team.md` is **green** ("Changes to be committed"), `notes.txt` is still **red**.
 4. `git add .` — now `notes.txt` slides into the box too.
 5. `git restore --staged notes.txt` — it slides back out onto the desk.
-6. Clean up: `git restore --staged team.md` then `git restore team.md notes.txt`.
+6. Clean up: `git restore --staged team.md`, then `git restore team.md notes.txt`.
 
 ## Mission
 
@@ -44,7 +44,7 @@ In your mission repo, add yourself to the team page and pack it in the box.
    ```
    - Sam (new teammate)
    ```
-   Save the file. (Or use `echo "- Sam (new teammate)" >> team.md` in the terminal.)
+   and save. (Or in the terminal: `echo "- Sam (new teammate)" >> team.md`)
 2. In the terminal:
    ```
    course
@@ -54,10 +54,10 @@ In your mission repo, add yourself to the team page and pack it in the box.
    ```
    `team.md` should be **green**, and the map shows it in the **Box**.
 
-**Don't commit yet.** That's the next chapter. Run `course` then `./check`.
+**Don't commit yet.** That's the next chapter. Run `check`.
 
 ## Remember
 
 `git add` doesn't save anything. It chooses what your next save will contain.
 
-**Next:** [Chapter 4: Seal it](04-seal-it.md)
+**Next:** [Chapter 4: Seal it](04-seal-it.md) · [All chapters](contents.md)

@@ -8,5 +8,5 @@ touch "$WAREHOUSE/tess-pushed"
 echo ""
 echo "Tess: Got your push, welcome to the team! I'm sending my meeting notes in a few seconds."
 echo ""
-nohup bash "__COURSE__/course/tess-push.sh" "$WAREHOUSE" 6 >/dev/null 2>&1 &
+nohup bash "__FILES__/tess-push.sh" "$WAREHOUSE" 6 >/dev/null 2>&1 </dev/null &
 exit 0

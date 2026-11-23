@@ -1,26 +1,30 @@
 #!/usr/bin/env bash
 # Builds everything in workspace/ for the MP:
-#   hq/                     folders to explore in Chapter 0
-#   warehouse.git           the team's "GitHub" (you clone it in Chapter 1)
-#   playground/             a safe practice repo (./reset puts it back)
+#   hq/                     Chapter 0: folders to explore
+#   warehouse.git           Part 1: the team's "GitHub" (you clone it in Chapter 1)
+#   playground/             a safe practice repo (reset-playground puts it back)
 #   practice-warehouse.git  the playground's own "GitHub"
-# Running it again ERASES your mission work and starts the MP over.
+#   rescue/                 Part 2: five repos in a mess
+#   detective/              Part 3: who broke the homepage?
+# Running it again ERASES your work and starts the MP over.
 set -e
 cd "$(dirname "$0")"
 ROOT=$(pwd)
 W="$ROOT/workspace"
 
 if [ -d "$W/mission" ] && [ "$1" != "--yes" ]; then
-  read -r -p "This erases your mission repo and starts the MP over. Type yes to continue: " ok
+  read -r -p "This erases ALL your work and starts the MP over. Type yes to continue: " ok
   [ "$ok" = "yes" ] || { echo "Nothing changed."; exit 1; }
 fi
 
-source "$ROOT/course/lib.sh"
+source "$ROOT/.course-files/lib.sh"
 rm -rf "$W"
 mkdir -p "$W"
 build_hq "$W/hq"
-build_story_warehouse "$W/warehouse.git" "$ROOT"
+build_story_warehouse "$W/warehouse.git"
 build_playground "$W"
-[ -f "$ROOT/answers.txt" ] || cp "$ROOT/course/answers-template.txt" "$ROOT/answers.txt"
+build_rescue "$W/rescue"
+build_detective "$W/detective"
+[ -f "$ROOT/answers.txt" ] || cp "$ROOT/.course-files/answers-template.txt" "$ROOT/answers.txt"
 
 echo "Ready. Open lessons/00-terminal.md to begin."

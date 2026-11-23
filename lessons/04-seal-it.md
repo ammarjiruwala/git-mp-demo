@@ -24,7 +24,7 @@ git config --global user.name "Your Name"
 git config --global user.email "you@illinois.edu"
 ```
 
-If you skip this, Git will stop you with **"Please tell me who you are"**. Now you know what to do.
+If you skip this, Git stops you with **"Please tell me who you are"**. Now you know what it means.
 
 ## The commands
 
@@ -32,7 +32,7 @@ If you skip this, Git will stop you with **"Please tell me who you are"**. Now y
 |---|---|
 | `git commit -m "message"` | Seal everything in the box into a commit with this message |
 | `git log --oneline` | See your new commit at the top |
-| `git show` | Look inside the newest commit: what exactly changed |
+| `git show` | Look inside the newest commit: exactly what changed |
 
 ## Try it
 
@@ -45,7 +45,7 @@ In the playground (`course` then `cd workspace/playground`):
    ```
 2. `git commit -m "Add Sam to the team"` — **watch the map:** the box flies to the **Shelf**, gets stamped **SEALED**, and is tagged **only on your laptop**.
 3. `git log --oneline` — your commit is at the top.
-4. `git show` — see exactly what changed. Lines starting with `+` were added. (Press **q** to get out.)
+4. `git show` — see exactly what changed. Lines starting with `+` were added, `-` were removed. If the viewer opens, press **q** to leave.
 5. `git commit -m "Again"` — what happens when the box is empty? Read Git's message.
 
 ## Mission
@@ -59,10 +59,10 @@ git commit -m "Add myself to the team page"
 git log --oneline
 ```
 
-The map shows your commit on the **Shelf**, tagged **only on your laptop**. Then `course` and `./check`.
+The map shows your commit on the **Shelf**, tagged **only on your laptop**. Run `check`.
 
 ## Remember
 
 A commit is a saved snapshot with a message. It lives on your computer until you share it.
 
-**Next:** [Chapter 5: Ship it](05-ship-it.md)
+**Next:** [Chapter 5: Ship it](05-ship-it.md) · [All chapters](contents.md)

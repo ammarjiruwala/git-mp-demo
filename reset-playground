@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+# Puts the playground back to how it started. Nothing else is touched.
+set -e
+cd "$(dirname "$0")"
+source "$(pwd)/.course-files/lib.sh"
+build_playground "$(pwd)/workspace"
+echo "The playground is fresh again. Go back in with: cd workspace/playground"

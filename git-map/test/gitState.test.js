@@ -41,11 +41,24 @@ test("layoutLanes puts a side branch in its own lane and joins it at the merge",
     { hash: "a", parents: ["r"] },
     { hash: "r", parents: [] },
   ];
-  const lanes = Object.fromEntries(layoutLanes(commits).map((c) => [c.hash, c.lane]));
+  const lanes = Object.fromEntries(layoutLanes(commits, new Set(["m", "a", "r"])).map((c) => [c.hash, c.lane]));
   assert.equal(lanes.m, 0);
   assert.equal(lanes.a, 0);
   assert.equal(lanes.b, 1);
   assert.equal(lanes.r, 0);
+});
+
+test("layoutLanes keeps the branch you're on in lane 0 even when another branch is newer", () => {
+  // f (feature, newest) and a (main) both come from r. We're on main.
+  const commits = [
+    { hash: "f", parents: ["r"] },
+    { hash: "a", parents: ["r"] },
+    { hash: "r", parents: [] },
+  ];
+  const lanes = Object.fromEntries(layoutLanes(commits, new Set(["a", "r"])).map((c) => [c.hash, c.lane]));
+  assert.equal(lanes.a, 0);
+  assert.equal(lanes.r, 0);
+  assert.equal(lanes.f, 1);
 });
 
 test("edit, add, commit, push move things from desk to box to shelf to warehouse", async () => {

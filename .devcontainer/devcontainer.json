@@ -10,7 +10,8 @@
   "customizations": {
     "vscode": {
       "settings": {
-        "workbench.editorAssociations": { "*.md": "vscode.markdown.preview.editor" },
+        "workbench.editorAssociations": { "**/lessons/*.md": "vscode.markdown.preview.editor" },
+        "files.exclude": { "**/.course-files": true, "**/.devcontainer": true, "**/git-map": true },
         "workbench.secondarySideBar.defaultVisibility": "hidden",
         "workbench.editor.enablePreview": false,
         "workbench.editor.enablePreviewFromQuickOpen": false,

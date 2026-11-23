@@ -12,7 +12,7 @@ Git never moves anything between your laptop and the warehouse on its own. You a
 
 ### The rejected push
 
-Sometimes `git push` says **rejected**. Don't panic: it happens all the time on teams. It means **a teammate shipped something while you were working**, so the warehouse has a box you don't have. Git refuses to push, so their work isn't overwritten.
+Sometimes `git push` says **rejected**. Don't panic, it happens all the time on teams. It means **a teammate shipped something while you were working**, so the warehouse has a box you don't have. Git refuses to push, so their work isn't overwritten.
 
 The fix is always the same:
 1. `git pull` to bring their work down and combine it with yours
@@ -24,23 +24,37 @@ The fix is always the same:
 |---|---|
 | `git push` | Ship your new commits to the warehouse |
 | `git pull` | Bring down your teammates' new commits and combine them with yours |
-| `git status` | Also tells you if you're **ahead** (you have commits to push) or **behind** (the warehouse has commits you don't) |
+| `git status` | Also tells you if you're **ahead** (you have commits to push) or **behind** |
 
-> When `git pull` combines your work with a teammate's, Git makes a **merge commit**. That's normal. Switch the map to **Tree view** to see two lines of work join.
+> When `git pull` combines your work with a teammate's, Git makes a **merge commit**. That's normal. Switch the map to **Tree view** to see the two lines of work join.
 
 ## Try it
 
-In the playground (`course` then `cd workspace/playground`):
+In the playground. Each step gives you the exact commands.
 
-1. Make a commit (add, commit), then `git push`. **Watch:** your box flies up to the **Warehouse**, and the "only on your laptop" tag disappears.
-2. Make Tess push to the playground's warehouse:
+1. Make a change, seal it and ship it:
    ```
    course
-   ./tess
    cd workspace/playground
+   echo "- Sam" >> team.md
+   git add team.md
+   git commit -m "Add Sam"
+   git push
+   ```
+   **Watch:** your box flies up to the **Warehouse**, and the "only on your laptop" tag disappears.
+2. Make Tess push to the playground's warehouse:
+   ```
+   tess
    ```
    **Watch:** Tess's box drops into the **Warehouse**, tagged "not on your laptop yet".
-3. Make another commit, then `git push`. **Rejected!** Read the message.
+3. Make another change and try to ship it:
+   ```
+   echo "more notes" >> notes.txt
+   git add notes.txt
+   git commit -m "Add more notes"
+   git push
+   ```
+   **Rejected!** Read the message.
 4. `git pull` — Tess's box comes down to your **Shelf**, plus a merge commit.
 5. `git push` — everything ships.
 
@@ -52,7 +66,7 @@ In the playground (`course` then `cd workspace/playground`):
    cd workspace/mission
    git push
    ```
-   Your commit flies to the warehouse. Read what Git prints: **Tess** replies. Wait a few seconds and **watch the Warehouse**: her box arrives.
+   Read what Git prints: **Tess** replies. Wait a few seconds and **watch the Warehouse**: her box arrives.
 2. Add a fun fact after your name in `team.md` (like `- Sam (new teammate, loves pretzels)`), save, then:
    ```
    git add team.md
@@ -65,14 +79,10 @@ In the playground (`course` then `cd workspace/playground`):
    git pull
    git push
    ```
-4. `course` and `./check`. All six chapters should have a ✓.
+4. Run `check`.
 
 ## Remember
 
 Push sends your commits; pull brings your teammates' commits. If a push is rejected: pull, then push.
 
-## You did it
-
-You've now used the Git commands you'll need most on your group project: `clone`, `status`, `log`, `add`, `commit`, `push` and `pull`.
-
-*In the full MP, the story continues with branches, merge conflicts and pull requests.*
+**Next:** [Chapter 6: Branches](06-branches.md) · [All chapters](contents.md)

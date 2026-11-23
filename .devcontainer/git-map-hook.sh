@@ -36,3 +36,9 @@ course() { cd "$GITMAP_COURSE_ROOT" || return; }
 # Merges (like the one `git pull` makes) use Git's default message
 # instead of opening an editor and waiting.
 export GIT_MERGE_AUTOEDIT=no
+
+# Course commands that work from any folder.
+check() { "$GITMAP_COURSE_ROOT/check" "$@"; }
+reset-playground() { "$GITMAP_COURSE_ROOT/reset-playground" "$@"; }
+tess() { "$GITMAP_COURSE_ROOT/tess" "$@"; }
+request-review() { bash "$GITMAP_COURSE_ROOT/.course-files/review.sh" "$@"; }

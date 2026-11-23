@@ -45,6 +45,8 @@ function activate(context) {
 
   // Source 1: our terminal hook (most reliable: always has the command text).
   watchCommandLog(context);
+  // Git's viewer (pager) leaves a marker file while it's open (.course-files/git-viewer.sh).
+  watchViewer(context);
 
   // Source 2: VS Code's own terminal tracking (works without the hook,
   // but sometimes reports an empty command).
@@ -105,6 +107,22 @@ function watchCommandLog(context) {
   };
   fs.watchFile(LOG_FILE, { interval: 250 }, onChange);
   context.subscriptions.push({ dispose: () => fs.unwatchFile(LOG_FILE, onChange) });
+}
+
+// While Git's viewer is open, show a banner with the keys to move around and quit.
+// Short output flashes the viewer for an instant, so wait a moment before showing it.
+const VIEWER_FILE = path.join(os.homedir(), ".git-map", "viewer-open");
+function watchViewer(context) {
+  let shown = false;
+  let timer = null;
+  const tell = (open) => { if (shown !== open) { shown = open; if (panel) panel.webview.postMessage({ type: "viewer", open }); } };
+  const onChange = () => {
+    clearTimeout(timer);
+    if (fs.existsSync(VIEWER_FILE)) timer = setTimeout(() => tell(fs.existsSync(VIEWER_FILE)), 400);
+    else tell(false);
+  };
+  fs.watchFile(VIEWER_FILE, { interval: 200 }, onChange);
+  context.subscriptions.push({ dispose: () => fs.unwatchFile(VIEWER_FILE, onChange) });
 }
 
 // ---------- reading the repo and telling the panel ----------
@@ -256,6 +274,7 @@ function pageHtml(webview, extensionUri) {
       <button type="button" data-view="tree" aria-pressed="false">Tree view</button>
     </div>
   </header>
+  <div id="viewer" class="viewer" hidden><b>You're in Git's viewer.</b> The output is longer than the screen, so Git shows it one page at a time. <kbd>Space</kbd> next page · <kbd>b</kbd> back · <kbd>↓</kbd> <kbd>↑</kbd> one line · <kbd>q</kbd> quit and type again</div>
   <div id="command" class="command" hidden></div>
   <p id="caption" class="caption">Waiting for Git…</p>
   <div id="hint" class="hint" hidden>

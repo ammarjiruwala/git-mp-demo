@@ -13,6 +13,9 @@ grep -q "git-map-hook.sh" ~/.bashrc 2>/dev/null || echo "source \"$ROOT/.devcont
 git config --global pull.rebase false
 git config --global init.defaultBranch main
 git config --global core.editor "code --wait"
+#    - long output (git log, git show) opens Git's normal viewer, which also
+#      tells the Git Map to show "press q to quit"
+git config --global core.pager "bash $ROOT/.course-files/git-viewer.sh"
 # (Your name and email are set by you in Chapter 4.)
 
 # 3. Build the practice repos.

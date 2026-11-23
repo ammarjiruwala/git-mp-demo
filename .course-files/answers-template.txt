@@ -1,0 +1,19 @@
+YOUR ANSWERS
+
+Some missions give you a code or ask a question. Write each answer after
+the colon, then save this file (Cmd+S on Mac, Ctrl+S on Windows).
+
+PART 1: First week on the team
+Chapter 0:
+Chapter 2:
+Chapter 6:
+Chapter 10:
+
+PART 2: Rescue mission
+Rescue 5:
+
+PART 3: Who broke main?
+Case 1:
+Case 2:
+Case 3:
+Case 4:
