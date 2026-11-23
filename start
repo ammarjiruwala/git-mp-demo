@@ -1,0 +1,40 @@
+#!/usr/bin/env bash
+# Builds (or rebuilds) the practice repos in workspace/:
+#   workspace/warehouse.git  our stand-in for GitHub
+#   workspace/playground     a practice repo cloned from the warehouse
+# Running it again resets everything to the start.
+set -e
+cd "$(dirname "$0")"
+ROOT=$(pwd)
+W="$ROOT/workspace"
+
+as_priya() {
+  GIT_AUTHOR_NAME="Priya" GIT_AUTHOR_EMAIL="priya@example.com" \
+  GIT_COMMITTER_NAME="Priya" GIT_COMMITTER_EMAIL="priya@example.com" git "$@"
+}
+
+rm -rf "$W"
+mkdir -p "$W"
+
+# Make the starting history in a temporary repo.
+SEED=$(mktemp -d)
+git -C "$SEED" init -q -b main
+printf '# Snack Map\n\nThe campus app our team is building.\n' > "$SEED/README.md"
+as_priya -C "$SEED" add README.md
+as_priya -C "$SEED" commit -q -m "Start the project"
+printf '# Team\n\n- Priya (team lead)\n' > "$SEED/team.md"
+as_priya -C "$SEED" add team.md
+as_priya -C "$SEED" commit -q -m "Add the team page"
+printf 'Welcome! Ask Priya if you get stuck.\n' > "$SEED/notes.txt"
+as_priya -C "$SEED" add notes.txt
+as_priya -C "$SEED" commit -q -m "Add notes for new teammates"
+
+# The warehouse is a "bare" repo: just the history, no files to edit. Like GitHub.
+git clone -q --bare "$SEED" "$W/warehouse.git"
+rm -rf "$SEED"
+
+git clone -q "$W/warehouse.git" "$W/playground"
+
+echo "Ready."
+echo "  workspace/playground     your practice repo:  cd workspace/playground"
+echo "  workspace/warehouse.git  stand-in for GitHub (don't edit it directly)"

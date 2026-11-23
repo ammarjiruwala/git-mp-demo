@@ -2,17 +2,19 @@
   "name": "Git MP demo",
   "image": "mcr.microsoft.com/devcontainers/javascript-node:22",
 
-  // Runs each time VS Code connects to the Codespace. Installs Git Map.
+  // Once, when the Codespace is created: terminal hook, Git settings, practice repos.
+  "postCreateCommand": "bash .devcontainer/setup.sh",
+  // Every time VS Code connects: install the Git Map extension.
   "postAttachCommand": "bash .devcontainer/install-extension.sh",
 
   "customizations": {
-    "codespaces": {
-      "openFiles": ["lessons/00-phase0-test.md"]
-    },
     "vscode": {
       "settings": {
         "workbench.editorAssociations": { "*.md": "vscode.markdown.preview.editor" },
-        "terminal.integrated.shellIntegration.enabled": true
+        "workbench.secondarySideBar.defaultVisibility": "hidden",
+        "terminal.integrated.shellIntegration.enabled": true,
+        "git.autoRepositoryDetection": "subFolders",
+        "git.openRepositoryInParentFolders": "never"
       }
     }
   }

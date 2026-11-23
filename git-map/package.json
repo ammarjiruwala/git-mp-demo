@@ -2,13 +2,17 @@
   "name": "git-map",
   "displayName": "Git Map",
   "description": "Shows what Git is doing as you type: desk, box, shelf and warehouse.",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "publisher": "cs124h",
   "repository": { "type": "git", "url": "https://github.com/ammarjiruwala/git-mp-demo" },
   "engines": { "vscode": "^1.93.0" },
   "categories": ["Education", "SCM Providers"],
   "activationEvents": ["onStartupFinished"],
   "main": "./extension.js",
+  "scripts": {
+    "test": "node --test test/*.test.js",
+    "package": "npx --yes @vscode/vsce@3 package --skip-license -o git-map.vsix"
+  },
   "contributes": {
     "commands": [{ "command": "gitMap.open", "title": "Git Map: Open" }]
   }
