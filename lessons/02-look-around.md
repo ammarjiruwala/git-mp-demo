@@ -47,7 +47,7 @@ cd workspace/mission
 git log
 ```
 
-Read every message carefully, not just the first line of each. One of them has your Chapter 2 code. Write it in **answers.md** and save. Then:
+Read every message carefully, not just the first line of each. One of them has your Chapter 2 code. Write it in **answers.txt** and save. Then:
 
 ```
 course

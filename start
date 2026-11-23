@@ -21,6 +21,6 @@ mkdir -p "$W"
 build_hq "$W/hq"
 build_story_warehouse "$W/warehouse.git" "$ROOT"
 build_playground "$W"
-[ -f "$ROOT/answers.md" ] || cp "$ROOT/course/answers-template.md" "$ROOT/answers.md"
+[ -f "$ROOT/answers.txt" ] || cp "$ROOT/course/answers-template.txt" "$ROOT/answers.txt"
 
 echo "Ready. Open lessons/00-terminal.md to begin."

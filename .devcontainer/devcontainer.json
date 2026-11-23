@@ -12,6 +12,8 @@
       "settings": {
         "workbench.editorAssociations": { "*.md": "vscode.markdown.preview.editor" },
         "workbench.secondarySideBar.defaultVisibility": "hidden",
+        "workbench.editor.enablePreview": false,
+        "workbench.editor.enablePreviewFromQuickOpen": false,
         "terminal.integrated.shellIntegration.enabled": true,
         "git.autoRepositoryDetection": "subFolders",
         "git.openRepositoryInParentFolders": "never"

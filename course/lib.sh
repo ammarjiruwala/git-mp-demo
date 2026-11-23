@@ -16,7 +16,7 @@ build_hq() {
   printf 'Just snacks in here. Wrong room!\n' > "$HQ/floor-1/kitchen/fridge.txt"
   printf "Tess's sketches for the homepage. No notes here.\n" > "$HQ/floor-1/design-studio/sketches.txt"
   printf 'Whiteboard: "Demo day is Friday!"\n' > "$HQ/floor-2/meeting-room/whiteboard.txt"
-  printf 'Hi new teammate!\n\nYou found it. Your Chapter 0 code is: BEACON\n\nWrite it in answers.md, then head back to the course folder with: course\n\n- Priya\n' > "$HQ/floor-2/priyas-desk/drawer/note-for-you.txt"
+  printf 'Hi new teammate!\n\nYou found it. Your Chapter 0 code is: BEACON\n\nWrite it in answers.txt, then head back to the course folder with: course\n\n- Priya\n' > "$HQ/floor-2/priyas-desk/drawer/note-for-you.txt"
 }
 
 # The team's warehouse (our stand-in for GitHub), with the project's history so far.

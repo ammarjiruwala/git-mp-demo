@@ -2,7 +2,7 @@
   "name": "git-map",
   "displayName": "Git Map",
   "description": "Shows what Git is doing as you type: desk, box, shelf and warehouse.",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "publisher": "cs124h",
   "repository": { "type": "git", "url": "https://github.com/ammarjiruwala/git-mp-demo" },
   "engines": { "vscode": "^1.93.0" },
@@ -14,6 +14,9 @@
     "package": "npx --yes @vscode/vsce@3 package --skip-license -o git-map.vsix"
   },
   "contributes": {
-    "commands": [{ "command": "gitMap.open", "title": "Git Map: Open" }]
+    "commands": [
+      { "command": "gitMap.open", "title": "Git Map: Open" },
+      { "command": "gitMap.lessons", "title": "Git Map: Open a lesson" }
+    ]
   }
 }

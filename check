@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // Checks your progress in each chapter. Run it from the course folder: ./check
-// It only reads your repos and answers.md. It never changes anything.
+// It only reads your repos and answers.txt. It never changes anything.
 // (In the full MP, PrairieLearn runs these same checks to grade you.)
 "use strict";
 const { execFileSync } = require("child_process");
@@ -21,7 +21,7 @@ function git(cwd, ...args) {
 
 function answer(chapter) {
   let text = "";
-  try { text = fs.readFileSync(path.join(ROOT, "answers.md"), "utf8"); } catch { return ""; }
+  try { text = fs.readFileSync(path.join(ROOT, "answers.txt"), "utf8"); } catch { return ""; }
   const m = text.match(new RegExp(`Chapter ${chapter}:[ \\t]*(\\S*)`, "i"));
   return m ? m[1].toUpperCase() : "";
 }
@@ -48,7 +48,7 @@ const chapters = [
   {
     title: "Terminal survival",
     done: () => answer(0) === "BEACON",
-    hint: () => answer(0) ? `"${answer(0)}" isn't the right code for Chapter 0. Look again in workspace/hq.` : "Find Priya's note in workspace/hq (use cd, ls and cat), then write its code in answers.md and save.",
+    hint: () => answer(0) ? `"${answer(0)}" isn't the right code for Chapter 0. Look again in workspace/hq.` : "Find Priya's note in workspace/hq (use cd, ls and cat), then write its code in answers.txt and save.",
   },
   {
     title: "Get the code",
@@ -64,7 +64,7 @@ const chapters = [
   {
     title: "Look around",
     done: () => answer(2) === "LANTERN",
-    hint: () => answer(2) ? `"${answer(2)}" isn't the right code for Chapter 2. Read every commit message in git log, not just the first lines.` : "In workspace/mission, run git log and read the messages. One has a code for you. Write it in answers.md.",
+    hint: () => answer(2) ? `"${answer(2)}" isn't the right code for Chapter 2. Read every commit message in git log, not just the first lines.` : "In workspace/mission, run git log and read the messages. One has a code for you. Write it in answers.txt.",
   },
   {
     title: "Pack the box",

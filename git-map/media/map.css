@@ -46,7 +46,13 @@ code { font-family: var(--vscode-editor-font-family); font-size: 0.95em; backgro
 .here .crumb { padding: 2px 8px; border-radius: 4px; background: var(--card); }
 .here .crumb:last-child { background: var(--accent); color: #fff; font-weight: 600; }
 .here .sep { color: var(--muted); }
-.here.flash { animation: here-flash 1s ease-out; }
+.here.flash, .listing.flash { animation: here-flash 1s ease-out; }
+.hint-note { color: var(--fg) !important; border-left: 3px solid var(--accent); padding-left: 8px; }
+.listing { list-style: none; margin: 0; padding: 6px; border-radius: 6px; display: flex; flex-wrap: wrap; gap: 6px; }
+.listing li { display: flex; align-items: center; gap: 6px; padding: 3px 8px; border-radius: 4px; background: var(--card); font-family: var(--vscode-editor-font-family); font-size: 12px; }
+.listing .icon { width: 12px; height: 10px; flex: none; }
+.listing .folder .icon { background: var(--vscode-charts-yellow, #d7ba7d); border-radius: 1px 3px 2px 2px; }
+.listing .file .icon { width: 9px; height: 12px; border: 1.5px solid var(--muted); border-radius: 1px 3px 1px 1px; }
 @keyframes here-flash { from { background: var(--cardboard); } to { background: transparent; } }
 
 /* layout of the four zones */

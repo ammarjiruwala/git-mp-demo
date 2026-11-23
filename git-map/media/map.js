@@ -42,6 +42,31 @@
         here.classList.add("flash");
       }
       $("#hintText").innerHTML = m.text;
+
+      // What's in this folder, like `ls` shows.
+      const list = $("#listing");
+      list.innerHTML = (m.listing || []).length
+        ? m.listing.map((e) => `<li class="${e.folder ? "folder" : "file"}"><span class="icon" aria-hidden="true"></span>${esc(e.name)}${e.folder ? "/" : ""}</li>`).join("")
+        : `<li class="empty">Nothing here.</li>`;
+
+      // A one-line explanation of the terminal command that was just run.
+      const note = $("#hintNote");
+      const cmd = (m.command || "").trim();
+      const word = cmd.split(/\s+/)[0];
+      const notes = {
+        ls: "<code>ls</code> lists what's in the folder you're in. It's shown below too.",
+        pwd: "<code>pwd</code> prints where you are: the same path as above.",
+        cd: /^cd\s+\.\.\s*$/.test(cmd) ? "<code>cd ..</code> moved you up one folder." : "<code>cd</code> moved you into another folder. The path above follows you.",
+        cat: "<code>cat</code> printed what's inside that file. Read it in the terminal.",
+        course: "<code>course</code> took you back to the course folder.",
+        clear: "<code>clear</code> wiped the terminal screen. Nothing else changed.",
+      };
+      if (cmd) {
+        note.hidden = !notes[word];
+        note.innerHTML = notes[word] || "";
+        if (word === "ls") { list.classList.remove("flash"); void list.offsetWidth; list.classList.add("flash"); }
+        if (word === "pwd") { here.classList.remove("flash"); void here.offsetWidth; here.classList.add("flash"); }
+      }
       $("#branch").hidden = true;
       $("#merging").hidden = true;
       $("#repoName").textContent = "Git Map";
@@ -155,6 +180,8 @@
       if (/^git\s+(status|log|diff|show|remote|branch\s*$)/.test(c)) return `<code>${esc(c.split(/\s+/).slice(0, 2).join(" "))}</code> only looks. Nothing moved.`;
       if (/^git\s+add\b/.test(c)) return `Nothing new went into the box. Was the file already packed, or not changed?`;
       if (/^git\s+commit\b/.test(c)) return `No commit was made. Is the box empty? Use <code>git add</code> first.`;
+      const word = c.split(/\s+/)[0];
+      if (["ls", "pwd", "cat", "clear", "cd"].includes(word)) return `<code>${esc(word)}</code> isn't a Git command, so nothing in Git changed.`;
     }
     return null;
   }

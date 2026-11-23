@@ -15,7 +15,7 @@ Git can feel like magic words. So we'll use a picture. Every change you make tak
 | **Shelf** | Sealed, labeled boxes on your shelf | Your **local repository**: saved versions (called **commits**) on your computer |
 | **Warehouse** | The team's shared warehouse | The **remote repository**: usually on **GitHub**, where the team shares work |
 
-The **Git Map** panel on the right shows these four places **live**. Every time you run a Git command, watch it: you'll see files and boxes move. If you close it, click **Git Map** in the bottom bar.
+The **Git Map** panel on the right shows these four places **live**. Every time you run a Git command, watch it: you'll see files and boxes move. If you close it, click **Git Map** in the bottom bar. If you lose this lesson, click **Lessons** in the bottom bar to open any chapter.
 
 In this chapter you're not inside a Git project yet, so the map only shows **where you are**. Watch that path change as you move around with `cd`. The desk, box, shelf and warehouse appear in Chapter 1.
 
@@ -38,6 +38,7 @@ In a terminal you're always *standing in* one folder. Commands happen in that fo
 | `clear` | Clear the screen |
 
 **Tips that save time**
+- **Copy and paste** commands from these lessons instead of retyping them. One misplaced space or dot is enough to break a command.
 - Press **Tab** to finish a folder or file name for you. Type `cd wor` then Tab.
 - Press **↑** (up arrow) to bring back your last command.
 - If something seems stuck, press **Ctrl+C** to stop it.
@@ -48,7 +49,7 @@ In a terminal you're always *standing in* one folder. Commands happen in that fo
 Type each line, then press Enter. Before each one, **guess** what will happen.
 
 1. `pwd` — where are you right now?
-2. `ls` — what's in this folder? You should see `lessons`, `workspace`, `answers.md`, and more.
+2. `ls` — what's in this folder? You should see `lessons`, `workspace`, `answers.txt`, and more.
 3. `cd workspace` then `ls`
 4. `cd ..` — you're back where you started. Check with `pwd`.
 
@@ -57,7 +58,7 @@ Type each line, then press Enter. Before each one, **guess** what will happen.
 Find Priya's note. It's somewhere inside `workspace/hq`. Use `cd`, `ls` and `cat` to explore. The lobby is a good place to start.
 
 When you find the code:
-1. Open **answers.md** from the file list on the left.
+1. Open **answers.txt** from the file list on the left.
 2. Write the code after `Chapter 0:` and save (**Cmd+S** on Mac, **Ctrl+S** on Windows).
 3. Go back to the course folder (`course`) and run:
 

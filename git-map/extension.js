@@ -34,6 +34,15 @@ function activate(context) {
   button.show();
   context.subscriptions.push(button);
 
+  // A "Lessons" button to reopen any chapter.
+  context.subscriptions.push(vscode.commands.registerCommand("gitMap.lessons", pickLesson));
+  const lessons = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 99);
+  lessons.text = "$(book) Lessons";
+  lessons.tooltip = "Open a chapter";
+  lessons.command = "gitMap.lessons";
+  lessons.show();
+  context.subscriptions.push(lessons);
+
   // Source 1: our terminal hook (most reliable: always has the command text).
   watchCommandLog(context);
 
@@ -126,12 +135,13 @@ async function refresh() {
     const dir = terminalDir || startingDir();
     const repo = await findRepo(dir);
     const where = placeParts(dir, root);
+    const listing = folderContents(dir);
     let message;
     if (!repo) {
-      message = { type: "hint", where, text: "This folder isn't a Git repo, so there's no desk, box or shelf to show here. Use <code>cd</code> to walk around: the path above follows you. In Chapter 1 you'll get a repo of your own." };
+      message = { type: "hint", where, listing, text: "This folder isn't a Git repo, so there's no desk, box or shelf to show here. Use <code>cd</code> to walk around: the path above follows you. In Chapter 1 you'll get a repo of your own." };
     } else if (root && repo === root && fs.existsSync(path.join(root, "workspace"))) {
       // The demo's own repo: not something students should practice on.
-      message = { type: "hint", where, text: "This is the course folder. The map wakes up inside a practice repo: <code>cd workspace/playground</code> to practice, or <code>cd workspace/mission</code> once you've cloned it in Chapter 1." };
+      message = { type: "hint", where, listing, text: "This is the course folder. The map wakes up inside a practice repo: <code>cd workspace/playground</code> to practice, or <code>cd workspace/mission</code> once you've cloned it in Chapter 1." };
     } else {
       const state = await readState(repo);
       watchFolder(path.join(repo, ".git"));
@@ -162,6 +172,19 @@ function placeParts(dir, root) {
   return dir.split(path.sep).filter(Boolean);
 }
 
+// What's in a folder (like `ls`): folders first, hidden files left out.
+function folderContents(dir) {
+  try {
+    return fs.readdirSync(dir, { withFileTypes: true })
+      .filter((e) => !e.name.startsWith("."))
+      .map((e) => ({ name: e.name, folder: e.isDirectory() }))
+      .sort((a, b) => (b.folder - a.folder) || a.name.localeCompare(b.name))
+      .slice(0, 40);
+  } catch {
+    return [];
+  }
+}
+
 // Watch a folder (like .git) so the map updates right after a command.
 function watchFolder(dir) {
   if (fsWatchers.has(dir) || !fs.existsSync(dir)) return;
@@ -183,6 +206,21 @@ function openFirstLesson() {
   if (!first) return;
   const alreadyOpen = vscode.window.tabGroups.all.some((g) => g.tabs.some((t) => t.label.includes(first)));
   if (!alreadyOpen) vscode.commands.executeCommand("markdown.showPreview", vscode.Uri.file(path.join(dir, first)));
+}
+
+// Shows the list of chapters and opens the chosen one in the left column.
+async function pickLesson() {
+  const root = workspaceRoot();
+  const dir = root && path.join(root, "lessons");
+  if (!dir || !fs.existsSync(dir)) { vscode.window.showInformationMessage("No lessons folder here."); return; }
+  const files = fs.readdirSync(dir).filter((f) => f.endsWith(".md")).sort();
+  const items = files.map((f) => {
+    const firstLine = fs.readFileSync(path.join(dir, f), "utf8").split("\n")[0].replace(/^#\s*/, "");
+    return { label: firstLine || f, file: f };
+  });
+  const choice = await vscode.window.showQuickPick(items, { placeHolder: "Open a chapter" });
+  if (!choice) return;
+  await vscode.commands.executeCommand("vscode.openWith", vscode.Uri.file(path.join(dir, choice.file)), "vscode.markdown.preview.editor", { viewColumn: vscode.ViewColumn.One, preview: false });
 }
 
 function openPanel(context) {
@@ -223,6 +261,9 @@ function pageHtml(webview, extensionUri) {
   <div id="hint" class="hint" hidden>
     <div class="here-label">You are here</div>
     <div class="here" id="here"></div>
+    <p id="hintNote" class="hint-note" hidden></p>
+    <div class="here-label">In this folder</div>
+    <ul class="listing" id="listing"></ul>
     <p id="hintText"></p>
   </div>
   <main id="main">
